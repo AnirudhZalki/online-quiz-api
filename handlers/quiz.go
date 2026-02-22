@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CreateQuizInput struct {
@@ -95,18 +96,41 @@ func GetQuizResults(c *gin.Context) {
 	ctx, cancel := models.Context()
 	defer cancel()
 
-	cursor, err := models.Sessions.Find(ctx, bson.M{"quiz_id": quizID})
+	pipeline := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.M{"quiz_id": quizID}}},
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from":         "users",
+			"localField":   "student_id",
+			"foreignField": "_id",
+			"as":           "student",
+		}}},
+		bson.D{{Key: "$unwind", Value: "$student"}},
+	}
+
+	cursor, err := models.Sessions.Aggregate(ctx, pipeline)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch results"})
 		return
 	}
 	defer cursor.Close(ctx)
 
-	var sessions []models.QuizSession
-	if err = cursor.All(ctx, &sessions); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not decode results"})
-		return
+	var results []gin.H
+	for cursor.Next(ctx) {
+		var raw bson.M
+		if err := cursor.Decode(&raw); err != nil {
+			continue
+		}
+
+		student := raw["student"].(bson.M)
+		results = append(results, gin.H{
+			"id":               raw["_id"],
+			"student_username": student["username"],
+			"score":            raw["score"],
+			"status":           raw["status"],
+			"start_time":       raw["start_time"],
+			"end_time":         raw["end_time"],
+		})
 	}
 
-	c.JSON(http.StatusOK, sessions)
+	c.JSON(http.StatusOK, results)
 }

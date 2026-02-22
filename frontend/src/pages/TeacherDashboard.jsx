@@ -7,6 +7,9 @@ const TeacherDashboard = () => {
     const [showCreate, setShowCreate] = useState(false);
     const [newQuiz, setNewQuiz] = useState({ title: '', description: '', duration: 10, questions: [] });
     const [currentQuestion, setCurrentQuestion] = useState({ text: '', options: ['', '', '', ''], correct_options: [] });
+    const [showResults, setShowResults] = useState(false);
+    const [selectedResults, setSelectedResults] = useState([]);
+    const [loadingResults, setLoadingResults] = useState(false);
 
     useEffect(() => {
         fetchQuizzes();
@@ -18,6 +21,21 @@ const TeacherDashboard = () => {
             setQuizzes(data);
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const fetchResults = async (quizId) => {
+        setLoadingResults(true);
+        setShowResults(true);
+        try {
+            const { data } = await api.get(`/teacher/results/${quizId}`);
+            setSelectedResults(data);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to fetch results");
+            setShowResults(false);
+        } finally {
+            setLoadingResults(false);
         }
     };
 
@@ -91,7 +109,7 @@ const TeacherDashboard = () => {
                                     <td>{q.duration} mins</td>
                                     <td>{new Date(q.created_at).toLocaleDateString()}</td>
                                     <td>
-                                        <button className="action-btn view"><Users size={16} /> Results</button>
+                                        <button onClick={() => fetchResults(q.id)} className="action-btn view"><Users size={16} /> Results</button>
                                     </td>
                                 </tr>
                             ))}
@@ -180,6 +198,46 @@ const TeacherDashboard = () => {
                 </div>
             )}
 
+            {showResults && (
+                <div className="modal-overlay">
+                    <div className="modal card glass-morphism">
+                        <header className="modal-header">
+                            <h2>Quiz Results</h2>
+                            <button onClick={() => setShowResults(false)} className="close-btn"><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
+                        </header>
+
+                        {loadingResults ? (
+                            <div className="loader">Loading student performance...</div>
+                        ) : selectedResults.length === 0 ? (
+                            <div className="no-data">No submissions yet for this quiz.</div>
+                        ) : (
+                            <div className="results-table-container">
+                                <table className="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Score</th>
+                                            <th>Status</th>
+                                            <th>Submitted At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedResults.map(res => (
+                                            <tr key={res.id}>
+                                                <td>{res.student_username}</td>
+                                                <td><span className="score-badge">{res.score}</span></td>
+                                                <td><span className={`status-pill ${res.status}`}>{res.status}</span></td>
+                                                <td>{new Date(res.end_time).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
@@ -205,6 +263,20 @@ const TeacherDashboard = () => {
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .option-field { display: flex; align-items: center; gap: 0.5rem; }
         .btn-secondary { background: var(--bg-dark); color: white; border: 1px solid var(--border); padding: 0.8rem; borderRadius: 10px; }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .close-btn { background: transparent; color: var(--text-muted); }
+        .loader, .no-data { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .results-table th { text-align: left; padding: 1rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+        .results-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--border); }
+        
+        .score-badge { background: var(--primary); color: white; padding: 0.3rem 0.8rem; borderRadius: 12px; font-weight: 700; }
+        .status-pill { padding: 0.3rem 0.8rem; borderRadius: 20px; font-size: 0.8rem; text-transform: capitalize; }
+        .status-pill.completed { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .status-pill.active { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+        .status-pill.expired { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
         
         .preview-item { display: flex; justify-content: space-between; padding: 1rem; background: rgba(99, 102, 241, 0.05); margin-top: 0.5rem; borderRadius: 10px; }
         .preview-item button { color: var(--accent); background: transparent; }
