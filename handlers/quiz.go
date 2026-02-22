@@ -102,9 +102,12 @@ func GetQuizResults(c *gin.Context) {
 			"from":         "users",
 			"localField":   "student_id",
 			"foreignField": "_id",
-			"as":           "student",
+			"as":           "student_doc",
 		}}},
-		bson.D{{Key: "$unwind", Value: "$student"}},
+		bson.D{{Key: "$unwind", Value: bson.M{
+			"path":                       "$student_doc",
+			"preserveNullAndEmptyArrays": true,
+		}}},
 	}
 
 	cursor, err := models.Sessions.Aggregate(ctx, pipeline)
@@ -116,19 +119,30 @@ func GetQuizResults(c *gin.Context) {
 
 	var results []gin.H
 	for cursor.Next(ctx) {
-		var raw bson.M
-		if err := cursor.Decode(&raw); err != nil {
+		var doc struct {
+			ID      primitive.ObjectID `bson:"_id"`
+			Score   int                `bson:"score"`
+			Status  string             `bson:"status"`
+			EndTime time.Time          `bson:"end_time"`
+			Student struct {
+				Username string `bson:"username"`
+			} `bson:"student_doc"`
+		}
+		if err := cursor.Decode(&doc); err != nil {
 			continue
 		}
 
-		student := raw["student"].(bson.M)
+		username := doc.Student.Username
+		if username == "" {
+			username = "Unknown Student"
+		}
+
 		results = append(results, gin.H{
-			"id":               raw["_id"],
-			"student_username": student["username"],
-			"score":            raw["score"],
-			"status":           raw["status"],
-			"start_time":       raw["start_time"],
-			"end_time":         raw["end_time"],
+			"id":               doc.ID,
+			"student_username": username,
+			"score":            doc.Score,
+			"status":           doc.Status,
+			"end_time":         doc.EndTime,
 		})
 	}
 
