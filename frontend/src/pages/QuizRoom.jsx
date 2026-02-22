@@ -16,7 +16,7 @@ const QuizRoom = () => {
 
     const startSession = useCallback(async () => {
         try {
-            const { data } = await api.post('/student/start', { quiz_id: parseInt(id) });
+            const { data } = await api.post('/student/start', { quiz_id: id });
             setSession(data.session_id);
             setQuestions(data.questions);
 
@@ -52,9 +52,9 @@ const QuizRoom = () => {
         if (submitted) return;
         setSubmitted(true);
 
-        const submissions = Object.entries(answers).map(([qId, ans]) => ({
-            question_id: parseInt(qId),
-            answer: ans
+        const submissions = Object.entries(answers).map(([qId, ansArray]) => ({
+            question_id: qId,
+            answers: ansArray
         }));
 
         try {
@@ -120,12 +120,17 @@ const QuizRoom = () => {
                         <p className="q-text">{q.text}</p>
                         <div className="options-list">
                             {q.options.map((opt, i) => (
-                                <label key={i} className={`option-item ${answers[q.id] === i ? 'selected' : ''}`}>
+                                <label key={i} className={`option-item ${(answers[q.id] || []).includes(i) ? 'selected' : ''}`}>
                                     <input
-                                        type="radio"
-                                        name={`q-${q.id}`}
-                                        checked={answers[q.id] === i}
-                                        onChange={() => setAnswers({ ...answers, [q.id]: i })}
+                                        type="checkbox"
+                                        checked={(answers[q.id] || []).includes(i)}
+                                        onChange={() => {
+                                            const current = answers[q.id] || [];
+                                            const updated = current.includes(i)
+                                                ? current.filter(idx => idx !== i)
+                                                : [...current, i];
+                                            setAnswers({ ...answers, [q.id]: updated });
+                                        }}
                                     />
                                     <span className="option-label">{String.fromCharCode(65 + i)}</span>
                                     <span className="option-text">{opt}</span>

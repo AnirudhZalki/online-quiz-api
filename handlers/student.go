@@ -21,7 +21,7 @@ type SubmitQuizInput struct {
 
 type AnswerInput struct {
 	QuestionID string `json:"question_id" binding:"required"`
-	Answer     int    `json:"answer" binding:"required"` // Index
+	Answers    []int  `json:"answers" binding:"required"` // Indices
 }
 
 func ListQuizzes(c *gin.Context) {
@@ -153,7 +153,7 @@ func SubmitQuiz(c *gin.Context) {
 	for _, ansInput := range input.Answers {
 		qID, _ := primitive.ObjectIDFromHex(ansInput.QuestionID)
 		if q, ok := questionMap[qID]; ok {
-			isCorrect := q.CorrectOption == ansInput.Answer
+			isCorrect := compareSlices(q.CorrectOptions, ansInput.Answers)
 			if isCorrect {
 				score++
 			}
@@ -162,7 +162,7 @@ func SubmitQuiz(c *gin.Context) {
 				ID:         primitive.NewObjectID(),
 				SessionID:  session.ID,
 				QuestionID: q.ID,
-				Answer:     ansInput.Answer,
+				Answers:    ansInput.Answers,
 				IsCorrect:  isCorrect,
 			})
 		}
@@ -178,4 +178,21 @@ func SubmitQuiz(c *gin.Context) {
 		"score":   score,
 		"total":   len(quiz.Questions),
 	})
+}
+
+func compareSlices(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[int]int)
+	for _, v := range a {
+		m[v]++
+	}
+	for _, v := range b {
+		if m[v] == 0 {
+			return false
+		}
+		m[v]--
+	}
+	return true
 }

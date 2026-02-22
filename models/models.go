@@ -24,10 +24,10 @@ type User struct {
 }
 
 type Question struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Text          string             `bson:"text" json:"text"`
-	Options       []string           `bson:"options" json:"options"`
-	CorrectOption int                `bson:"correct_option" json:"correct_option"`
+	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Text           string             `bson:"text" json:"text"`
+	Options        []string           `bson:"options" json:"options"`
+	CorrectOptions []int              `bson:"correct_options" json:"correct_options"`
 }
 
 type Quiz struct {
@@ -54,7 +54,7 @@ type Submission struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	SessionID  primitive.ObjectID `bson:"session_id" json:"session_id"`
 	QuestionID primitive.ObjectID `bson:"question_id" json:"question_id"`
-	Answer     int                `bson:"answer" json:"answer"`
+	Answers    []int              `bson:"answers" json:"answers"`
 	IsCorrect  bool               `bson:"is_correct" json:"is_correct"`
 }
 

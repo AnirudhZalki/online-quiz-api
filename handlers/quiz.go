@@ -18,9 +18,9 @@ type CreateQuizInput struct {
 }
 
 type QuestionInput struct {
-	Text          string   `json:"text" binding:"required"`
-	Options       []string `json:"options" binding:"required,min=2"`
-	CorrectOption int      `json:"correct_option" binding:"required"`
+	Text           string   `json:"text" binding:"required"`
+	Options        []string `json:"options" binding:"required,min=2"`
+	CorrectOptions []int    `json:"correct_options" binding:"required,min=1"`
 }
 
 func CreateQuiz(c *gin.Context) {
@@ -36,10 +36,10 @@ func CreateQuiz(c *gin.Context) {
 	var questions []models.Question
 	for _, qInput := range input.Questions {
 		questions = append(questions, models.Question{
-			ID:            primitive.NewObjectID(),
-			Text:          qInput.Text,
-			Options:       qInput.Options,
-			CorrectOption: qInput.CorrectOption,
+			ID:             primitive.NewObjectID(),
+			Text:           qInput.Text,
+			Options:        qInput.Options,
+			CorrectOptions: qInput.CorrectOptions,
 		})
 	}
 

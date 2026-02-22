@@ -6,7 +6,7 @@ const TeacherDashboard = () => {
     const [quizzes, setQuizzes] = useState([]);
     const [showCreate, setShowCreate] = useState(false);
     const [newQuiz, setNewQuiz] = useState({ title: '', description: '', duration: 10, questions: [] });
-    const [currentQuestion, setCurrentQuestion] = useState({ text: '', options: ['', '', '', ''], correct_option: 0 });
+    const [currentQuestion, setCurrentQuestion] = useState({ text: '', options: ['', '', '', ''], correct_options: [] });
 
     useEffect(() => {
         fetchQuizzes();
@@ -23,7 +23,7 @@ const TeacherDashboard = () => {
 
     const addQuestion = () => {
         setNewQuiz({ ...newQuiz, questions: [...newQuiz.questions, currentQuestion] });
-        setCurrentQuestion({ text: '', options: ['', '', '', ''], correct_option: 0 });
+        setCurrentQuestion({ text: '', options: ['', '', '', ''], correct_options: [] });
     };
 
     const removeQuestion = (index) => {
@@ -33,7 +33,15 @@ const TeacherDashboard = () => {
 
     const handleCreate = async () => {
         try {
-            await api.post('/teacher/quiz', newQuiz);
+            const payload = {
+                ...newQuiz,
+                questions: newQuiz.questions.map(q => ({
+                    text: q.text,
+                    options: q.options,
+                    correct_options: q.correct_options
+                }))
+            };
+            await api.post('/teacher/quiz', payload);
             setShowCreate(false);
             setNewQuiz({ title: '', description: '', duration: 10, questions: [] });
             fetchQuizzes();
@@ -78,10 +86,10 @@ const TeacherDashboard = () => {
                         </thead>
                         <tbody>
                             {quizzes.map(q => (
-                                <tr key={q.ID}>
-                                    <td>{q.Title}</td>
-                                    <td>{q.Duration} mins</td>
-                                    <td>{new Date(q.CreatedAt).toLocaleDateString()}</td>
+                                <tr key={q.id}>
+                                    <td>{q.title}</td>
+                                    <td>{q.duration} mins</td>
+                                    <td>{new Date(q.created_at).toLocaleDateString()}</td>
                                     <td>
                                         <button className="action-btn view"><Users size={16} /> Results</button>
                                     </td>
@@ -138,10 +146,15 @@ const TeacherDashboard = () => {
                                                 }}
                                             />
                                             <input
-                                                type="radio"
-                                                name="correct"
-                                                checked={currentQuestion.correct_option === i}
-                                                onChange={() => setCurrentQuestion({ ...currentQuestion, correct_option: i })}
+                                                type="checkbox"
+                                                checked={currentQuestion.correct_options.includes(i)}
+                                                onChange={() => {
+                                                    const current = currentQuestion.correct_options;
+                                                    const updated = current.includes(i)
+                                                        ? current.filter(idx => idx !== i)
+                                                        : [...current, i];
+                                                    setCurrentQuestion({ ...currentQuestion, correct_options: updated });
+                                                }}
                                             />
                                         </div>
                                     ))}

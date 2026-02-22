@@ -4,72 +4,72 @@ import api from '../api';
 import { Clock, Play, GraduationCap } from 'lucide-react';
 
 const StudentDashboard = () => {
-    const [quizzes, setQuizzes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        fetchQuizzes();
-    }, []);
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
 
-    const fetchQuizzes = async () => {
-        try {
-            const { data } = await api.get('/quizzes');
-            setQuizzes(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchQuizzes = async () => {
+    try {
+      const { data } = await api.get('/quizzes');
+      setQuizzes(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleStartQuiz = (id) => {
-        navigate(`/quiz/${id}`);
-    };
+  const handleStartQuiz = (id) => {
+    navigate(`/quiz/${id}`);
+  };
 
-    return (
-        <div className="dashboard container">
-            <header className="page-header">
-                <div>
-                    <h1>Welcome, Student!</h1>
-                    <p>Sharpen your skills with our timed assessments.</p>
+  return (
+    <div className="dashboard container">
+      <header className="page-header">
+        <div>
+          <h1>Welcome, Student!</h1>
+          <p>Sharpen your skills with our timed assessments.</p>
+        </div>
+        <div className="stats glass-morphism">
+          <GraduationCap size={40} className="stats-icon" />
+          <div>
+            <h3>Available Quizzes</h3>
+            <p>{quizzes.length} Assesments</p>
+          </div>
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="loader">Loading Quizzes...</div>
+      ) : (
+        <div className="quiz-grid">
+          {quizzes.map(quiz => (
+            <div key={quiz.id} className="quiz-card card">
+              <div className="quiz-content">
+                <h3>{quiz.title}</h3>
+                <p>{quiz.description}</p>
+                <div className="quiz-meta">
+                  <span className="meta-item">
+                    <Clock size={16} /> {quiz.duration} mins
+                  </span>
                 </div>
-                <div className="stats glass-morphism">
-                    <GraduationCap size={40} className="stats-icon" />
-                    <div>
-                        <h3>Available Quizzes</h3>
-                        <p>{quizzes.length} Assesments</p>
-                    </div>
-                </div>
-            </header>
+              </div>
+              <button
+                onClick={() => handleStartQuiz(quiz.id)}
+                className="btn-primary start-btn"
+              >
+                Start Quiz <Play size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
-            {loading ? (
-                <div className="loader">Loading Quizzes...</div>
-            ) : (
-                <div className="quiz-grid">
-                    {quizzes.map(quiz => (
-                        <div key={quiz.ID} className="quiz-card card">
-                            <div className="quiz-content">
-                                <h3>{quiz.Title}</h3>
-                                <p>{quiz.Description}</p>
-                                <div className="quiz-meta">
-                                    <span className="meta-item">
-                                        <Clock size={16} /> {quiz.Duration} mins
-                                    </span>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => handleStartQuiz(quiz.ID)}
-                                className="btn-primary start-btn"
-                            >
-                                Start Quiz <Play size={16} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <style jsx>{`
+      <style jsx>{`
         .container {
           max-width: 1200px;
           margin: 0 auto;
@@ -145,8 +145,8 @@ const StudentDashboard = () => {
           font-size: 1.2rem;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default StudentDashboard;
